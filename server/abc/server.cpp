@@ -8,6 +8,7 @@ SOCKET* Connections;
 SOCKET Listen;
 char endline = '$';
 int ClientCount = 0;
+std::string str;
 
 void SendMessageToClient(int ID)
 {

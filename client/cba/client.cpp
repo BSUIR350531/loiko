@@ -33,6 +33,7 @@ int main()
 	for (;; Sleep(10))
 	{
 		memset(&acc_buf, 0, strlen(acc_buf));
+		memset(&send_buf, 0, strlen(send_buf));
 		recv(Client, acc_buf, 1024 ,NULL);
 		size = strlen(acc_buf);
 		for (int i = 0; i < size; i++)
@@ -44,8 +45,7 @@ int main()
 		}
 		printf("\n");
 		std::cout << "Enter the message: ";
-		gets_s(send_buf);
-		printf(send_buf);
+		gets(send_buf);
 		send(Client, send_buf, sizeof(send_buf), NULL);
 	}
 
