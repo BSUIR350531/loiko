@@ -5,6 +5,7 @@
 #include <vector>
 
 
+
 SOCKET Client, Server;
 STARTUPINFO sa;
 PROCESS_INFORMATION pi;
@@ -12,6 +13,50 @@ HANDLE th;
 char acc_buf[256];
 WSAEVENT NewEvent, NewEvent2, pEvents[10];
 struct addrinfo hints, *result;
+SOCKET Connections[10];
+int ClientCount = 0;
+char * m_stop = "up";
+char endline = '\0';
+
+BOOL CtrlHandler(DWORD fdwCtrlType)
+{
+	switch (fdwCtrlType)
+	{
+	case CTRL_C_EVENT:
+		send(Connections[0], m_stop, strlen(m_stop), NULL);
+		printf("Send before die...\n");
+		closesocket(Server);
+		exit(0);
+	case CTRL_CLOSE_EVENT:
+		send(Connections[0], m_stop, strlen(m_stop), NULL);
+		printf("Send before close...\n");
+		system("pause");
+		exit(0);
+	}
+}
+
+void SendMessageToClient(int ID)
+{
+	char* buffer = new char[1024];
+	for (;; Sleep(75))
+	{
+		memset(buffer, 0, sizeof(buffer));
+		if (recv(Connections[ID], buffer, 1024, NULL))
+		{
+			size_t size = strlen(buffer);
+			buffer[size] = '\n';
+			buffer[size + 1] = endline;
+			printf(buffer);
+			printf("\n");
+			for (int i = 0; i <= ClientCount; i++)
+			{
+				send(Connections[i], buffer, strlen(buffer), NULL);
+			}
+
+		}
+	}
+	delete buffer;
+}
 
 DWORD WINAPI UpServer()
 {
@@ -43,11 +88,20 @@ DWORD WINAPI UpServer()
 		printf("Error listen socket\n");
 	}
 	closesocket(Client);
-	Client = socket(result->ai_family, result->ai_socktype, result->ai_protocol);
-	int co = connect(Client, result->ai_addr, int(result->ai_addrlen));
-	if (co == SOCKET_ERROR)
+	
+	printf("Start server...");
+	char m_connect[] = "Connect...";
+	for (;; Sleep(75))
 	{
-		printf("Error connecting socket: %d\n", WSAGetLastError());
+		SetConsoleCtrlHandler((PHANDLER_ROUTINE)CtrlHandler, TRUE);
+		if (SOCKET conn = accept(Server, NULL, NULL))
+		{
+			printf("Client connect...\n");
+			Connections[ClientCount] = conn;
+			send(Connections[ClientCount], m_connect, strlen(m_connect), NULL);
+			ClientCount++;
+			CreateThread(NULL, NULL, (LPTHREAD_START_ROUTINE)SendMessageToClient, (LPVOID)(ClientCount - 1), NULL, NULL);
+		}
 	}
 
 	return 0;
